@@ -1,5 +1,7 @@
 import 'package:analyzer/dart/element/element.dart';
-import 'package:build/build.dart';
+import 'package:analyzer/dart/element/type.dart';
+import 'package:build/build.dart' hide Builder;
+import 'package:built_value/built_value.dart' hide Builder;
 import 'package:hive/hive.dart';
 import 'package:hive_generator/src/builder.dart';
 import 'package:hive_generator/src/class_builder.dart';
@@ -36,9 +38,7 @@ class TypeAdapterGenerator extends GeneratorForAnnotation<HiveType> {
     var typeId = getTypeId(annotation);
 
     var adapterName = getAdapterName(interface.name, annotation);
-    var builder = interface is EnumElement
-        ? EnumBuilder(interface, getters)
-        : ClassBuilder(interface, getters, setters);
+    var builder = _getBuilder(interface, getters, setters);
 
     return '''
     class $adapterName extends TypeAdapter<${interface.name}> {
@@ -66,6 +66,25 @@ class TypeAdapterGenerator extends GeneratorForAnnotation<HiveType> {
               typeId == other.typeId;
     }
     ''';
+  }
+
+  Builder _getBuilder(
+    InterfaceElement interface,
+    List<AdapterField> getters,
+    List<AdapterField> setters,
+  ) {
+    var enumClassChecker = const TypeChecker.fromRuntime(EnumClass);
+    var builtChecker = const TypeChecker.fromRuntime(Built);
+
+    if (interface is EnumElement) {
+      return EnumBuilder(interface, getters);
+    } else if (interface.allSupertypes.any(enumClassChecker.isExactlyType)) {
+      return EnumClassBuilder(interface, getters);
+    } else if (interface.interfaces.any(builtChecker.isExactlyType)) {
+      return BuiltClassBuilder(interface, getters, setters);
+    } else {
+      return ClassBuilder(interface, getters, setters);
+    }
   }
 
   InterfaceElement getInterface(Element element) {

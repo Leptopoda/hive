@@ -1,3 +1,6 @@
+import 'package:built_collection/built_collection.dart';
+import 'package:built_value/built_value.dart';
+import 'package:built_value/serializer.dart';
 import 'package:hive/hive.dart';
 
 part 'types.g.dart';
@@ -60,4 +63,35 @@ enum Enum1 {
 @HiveType(typeId: 4)
 class EmptyClass {
   EmptyClass();
+}
+
+@HiveType(typeId: 5)
+abstract class BuiltClass implements Built<BuiltClass, BuiltClassBuilder> {
+  const BuiltClass._();
+
+  factory BuiltClass([void Function(BuiltClassBuilder)? updates]) =
+      _$BuiltClass;
+
+  @HiveField(0)
+  int get param1;
+
+  @HiveField(1)
+  String get param2;
+
+  static Serializer<BuiltClass> get serializer => _$builtClassSerializer;
+}
+
+@HiveType(typeId: 6)
+class BuiltEnum extends EnumClass {
+  const BuiltEnum._(String name) : super(name);
+
+  @HiveField(0)
+  static const BuiltEnum value1 = _$builtEnumValue1;
+
+  @HiveField(1)
+  static const BuiltEnum value2 = _$builtEnumValue2;
+
+  static BuiltSet<BuiltEnum> get values => _$builtEnumValues;
+  static BuiltEnum valueOf(String name) => _$builtEnumValueOf(name);
+  static Serializer<BuiltEnum> get serializer => _$builtEnumSerializer;
 }
